@@ -1,0 +1,22 @@
+// server/routes/userRoutes.js
+import express from 'express';
+const router = express.Router();
+import {
+  authUser,
+  registerUser,
+  getUsers,
+  deleteUser
+} from '../controllers/userController.js';
+import { protect, admin, superadmin } from '../middleware/authMiddleware.js';
+import upload from '../middleware/uploadMiddleware.js'; // Import multer middleware
+
+router.route('/').get(protect, admin, getUsers);
+
+// Add the upload middleware here. It will look for a field named 'photo'
+router.route('/register').post(protect, admin, upload.single('photo'), registerUser);
+
+router.post('/login', authUser);
+
+router.route('/:id').delete(protect, superadmin, deleteUser);
+
+export default router;
