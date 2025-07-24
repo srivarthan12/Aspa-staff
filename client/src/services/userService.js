@@ -1,7 +1,7 @@
 // client/src/services/userService.js
 import axios from 'axios';
 
-const API_URL = 'http://localhost:5000/api/users/';
+const API_URL = 'https://aspa-staff-production.up.railway.app/api/users/';
 
 const getUsers = async (token) => {
   const config = { headers: { Authorization: `Bearer ${token}` } };
