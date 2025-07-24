@@ -35,9 +35,7 @@ const createPayment = async (req, res) => {
   });
 
   employee.bata.forEach(b => {
-      if (b.status === 'pending') {
-          b.status = 'paid';
-      }
+      if (b.status === 'pending') b.status = 'paid';
   });
   await employee.save();
 
