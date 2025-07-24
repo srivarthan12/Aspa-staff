@@ -1,7 +1,7 @@
 // client/src/services/paymentService.js
 import axios from 'axios';
 
-const API_URL = 'http://localhost:5000/api/payments/';
+const API_URL = 'https://aspa-staff-production.up.railway.app/api/payments/';
 
 // Create a new payment record
 const createPayment = async (paymentData, token) => {
