@@ -1,7 +1,7 @@
 // client/src/services/advanceRequestService.js
 import axios from 'axios';
 
-const API_URL = 'https://aspa-staff-production.up.railway.app/api/advances/';
+const API_URL = 'https://aspa-staff.onrender.com/api/advances/';
 
 // Get all advance requests
 const getAllRequests = async (token) => {
