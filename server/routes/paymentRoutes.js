@@ -1,13 +1,17 @@
-// server/routes/paymentRoutes.js
+// server/routes/advanceRequestRoutes.js
 import express from 'express';
 const router = express.Router();
-import { createPayment, getMyPayments, getAllPayments } from '../controllers/paymentController.js';
+import { 
+    createAdvanceRequest, 
+    getAllAdvanceRequests, 
+    updateAdvanceRequestStatus 
+} from '../controllers/advanceRequestController.js';
 import { protect, admin } from '../middleware/authMiddleware.js';
 
 router.route('/')
-    .post(protect, admin, createPayment)
-    .get(protect, admin, getAllPayments);
+  .post(protect, createAdvanceRequest)
+  .get(protect, admin, getAllAdvanceRequests);
 
-router.route('/:employeeId').get(protect, getMyPayments);
+router.route('/:id').put(protect, admin, updateAdvanceRequestStatus);
 
 export default router;
