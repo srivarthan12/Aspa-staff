@@ -8,7 +8,7 @@ import connectDB from './config/db.js';
 import userRoutes from './routes/userRoutes.js';
 import paymentRoutes from './routes/paymentRoutes.js';
 import advanceRequestRoutes from './routes/advanceRequestRoutes.js';
-import uploadRoutes from './routes/uploadRoutes.js';
+// import uploadRoutes from './routes/uploadRoutes.js'; // THIS LINE IS REMOVED
 
 import { notFound, errorHandler } from './middleware/errorMiddleware.js';
 
@@ -34,7 +34,7 @@ app.use(express.json());
 app.use('/api/users', userRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/advances', advanceRequestRoutes);
-app.use('/api/upload', uploadRoutes);
+// app.use('/api/upload', uploadRoutes); // THIS LINE IS REMOVED
 
 
 // --- Root Route for Testing ---
