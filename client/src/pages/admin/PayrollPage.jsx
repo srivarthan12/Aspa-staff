@@ -9,9 +9,7 @@ import SkeletonRow from '../../components/SkeletonRow';
 const PayrollPage = () => {
   const [staff, setStaff] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
   const { user: loggedInUser } = useAuth();
-  
   const currentMonth = new Date().toLocaleString('default', { month: 'long' });
   const currentYear = new Date().getFullYear();
 
@@ -22,7 +20,7 @@ const PayrollPage = () => {
         userService.getUsers(loggedInUser.token),
         advanceRequestService.getAllRequests(loggedInUser.token)
       ]);
-      
+
       const staffUsers = users.filter(u => u.role === 'staff');
       const approvedAdvances = advances.filter(a => a.status === 'approved');
 
@@ -33,67 +31,38 @@ const PayrollPage = () => {
           const isPaid = !!paymentThisMonth;
 
           if (isPaid) {
-            // If paid, use the data from the actual payment record
-            return { 
-              ...staffMember, 
-              isPaid, 
-              paymentDetails: {
-                baseSalary: paymentThisMonth.baseSalary,
-                advanceDeduction: paymentThisMonth.advanceDeduction,
-                finalPaid: paymentThisMonth.finalPaid
-              }
-            };
+            return { ...staffMember, isPaid, paymentDetails: paymentThisMonth };
           } else {
-            // If not paid, calculate the pending amounts
             const pendingAdvance = approvedAdvances.find(a => a.employee?._id === staffMember._id);
             const pendingDeduction = pendingAdvance ? pendingAdvance.amount : 0;
-            
-            const payableAmount = (staffMember.salary || 0) - pendingDeduction;
-
-            return { 
-                ...staffMember, 
-                isPaid, 
-                paymentDetails: {
-                    baseSalary: staffMember.salary,
-                    advanceDeduction: pendingDeduction,
-                    finalPaid: payableAmount
-                }
-            };
+            const pendingBataTotal = (staffMember.bata || []).filter(b => b.status === 'pending').reduce((sum, b) => sum + b.amount, 0);
+            const payableAmount = (staffMember.salary || 0) - pendingDeduction + pendingBataTotal;
+            return { ...staffMember, isPaid, paymentDetails: { baseSalary: staffMember.salary, bataPaid: pendingBataTotal, advanceDeduction: pendingDeduction, finalPaid: payableAmount } };
           }
         })
       );
-
       setStaff(staffWithStatus);
     } catch (err) {
       console.error(err);
-      setError('Failed to fetch staff data.');
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    if (loggedInUser?.token) {
-      fetchStaffWithPaymentStatus();
-    }
+    if (loggedInUser?.token) fetchStaffWithPaymentStatus();
   }, [loggedInUser]);
 
   const handlePay = async (employeeId) => {
-    if (window.confirm('Are you sure you want to process this salary payment?')) {
+    if (window.confirm('Are you sure you want to process this payment?')) {
       try {
-        await paymentService.createPayment({ 
-            employeeId, 
-            month: currentMonth, 
-            year: currentYear 
-        }, loggedInUser.token);
+        await paymentService.createPayment({ employeeId, month: currentMonth, year: currentYear }, loggedInUser.token);
         fetchStaffWithPaymentStatus();
       } catch (err) {
         alert('Failed to process payment.');
       }
     }
   };
-
-  if (error) return <div className="text-red-500">{error}</div>;
 
   return (
     <div>
@@ -118,9 +87,7 @@ const PayrollPage = () => {
                   <tr key={employee._id}>
                     <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
-                            <div className="flex-shrink-0 h-10 w-10">
-                                <img className="h-10 w-10 rounded-full object-cover" src={employee.photo || `https://placehold.co/100x100/E2E8F0/4A5568?text=${employee.username.charAt(0)}`} alt="" />
-                            </div>
+                            <div className="flex-shrink-0 h-10 w-10"><img className="h-10 w-10 rounded-full object-cover" src={employee.photo || `https://placehold.co/100x100/E2E8F0/4A5568?text=${employee.username.charAt(0)}`} alt="" /></div>
                             <div className="ml-4">
                                 <div className="text-sm font-medium text-gray-900">{employee.username}</div>
                                 <div className="text-xs text-gray-500">{employee.staffRole}</div>
@@ -129,26 +96,13 @@ const PayrollPage = () => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
                         <div>Base: ₹{new Intl.NumberFormat('en-IN').format(employee.paymentDetails.baseSalary || 0)}</div>
-                        {employee.paymentDetails.advanceDeduction > 0 && (
-                            <div className="text-xs text-red-600">Deduction: - ₹{new Intl.NumberFormat('en-IN').format(employee.paymentDetails.advanceDeduction || 0)}</div>
-                        )}
-                        <div className="font-bold text-emerald-700 mt-1">
-                            {employee.isPaid ? 'Paid Amount' : 'Payable'}: ₹{new Intl.NumberFormat('en-IN').format(employee.paymentDetails.finalPaid || 0)}
-                        </div>
+                        {employee.paymentDetails.bataPaid > 0 && (<div className="text-xs text-blue-600">Bata: + ₹{new Intl.NumberFormat('en-IN').format(employee.paymentDetails.bataPaid || 0)}</div>)}
+                        {employee.paymentDetails.advanceDeduction > 0 && (<div className="text-xs text-red-600">Deduction: - ₹{new Intl.NumberFormat('en-IN').format(employee.paymentDetails.advanceDeduction || 0)}</div>)}
+                        <div className="font-bold text-emerald-700 mt-1">{employee.isPaid ? 'Paid Amount' : 'Payable'}: ₹{new Intl.NumberFormat('en-IN').format(employee.paymentDetails.finalPaid || 0)}</div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${employee.isPaid ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
-                          {employee.isPaid ? 'Paid' : 'Pending'}
-                      </span>
-                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap"><span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${employee.isPaid ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>{employee.isPaid ? 'Paid' : 'Pending'}</span></td>
                     <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
-                      {!employee.isPaid ? (
-                        <button onClick={() => handlePay(employee._id)} className="text-white bg-emerald-600 hover:bg-emerald-700 px-4 py-2 rounded-md text-xs font-bold">
-                          PAY NOW
-                        </button>
-                      ) : (
-                        <span className="text-gray-400 text-xs font-bold">COMPLETED</span>
-                      )}
+                      {!employee.isPaid ? (<button onClick={() => handlePay(employee._id)} className="text-white bg-emerald-600 hover:bg-emerald-700 px-4 py-2 rounded-md text-xs font-bold">PAY NOW</button>) : (<span className="text-gray-400 text-xs font-bold">COMPLETED</span>)}
                     </td>
                   </tr>
                 ))
@@ -162,3 +116,4 @@ const PayrollPage = () => {
 };
 
 export default PayrollPage;
+
