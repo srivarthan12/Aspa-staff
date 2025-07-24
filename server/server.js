@@ -37,15 +37,14 @@ app.use('/api/users', userRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/advances', advanceRequestRoutes);
 // --- Deployment Configuration ---
-if (process.env.NODE_ENV === 'production') {
-  const __dirname = path.resolve();
-  // Serve the static files from the React app
-  app.use(express.static(path.join(__dirname, '/client/dist')));
+if (process.env.NODE_ENV === "production") {
+  app.use(express.static(path.join(__dirname, "../frontend/dist")));
 
-  // Handles any requests that don't match the ones above
-  app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, 'client', 'dist', 'index.html'));
+  app.get(/(.*)/, (req, res) => {
+    res.sendFile(path.join(__dirname, "../frontend", "dist", "index.html"));
   });
+}
+
 } else {
   app.get('/', (req, res) => {
     res.send('API is running...');
