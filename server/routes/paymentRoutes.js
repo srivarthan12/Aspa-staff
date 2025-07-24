@@ -6,7 +6,7 @@ import { protect, admin } from '../middleware/authMiddleware.js';
 
 router.route('/')
     .post(protect, admin, createPayment)
-    .get(protect, admin, getAllPayments); // Add GET handler for all payments
+    .get(protect, admin, getAllPayments);
 
 router.route('/:employeeId').get(protect, getMyPayments);
 
