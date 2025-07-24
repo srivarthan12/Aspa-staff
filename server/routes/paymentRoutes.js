@@ -1,17 +1,14 @@
-// server/routes/advanceRequestRoutes.js
+// server/routes/paymentRoutes.js
 import express from 'express';
 const router = express.Router();
-import { 
-    createAdvanceRequest, 
-    getAllAdvanceRequests, 
-    updateAdvanceRequestStatus 
-} from '../controllers/advanceRequestController.js';
+import { createPayment, getMyPayments, getAllPayments } from '../controllers/paymentController.js';
 import { protect, admin } from '../middleware/authMiddleware.js';
 
 router.route('/')
-  .post(protect, createAdvanceRequest)
-  .get(protect, admin, getAllAdvanceRequests);
+    .post(protect, admin, createPayment)
+    .get(protect, admin, getAllPayments);
 
-router.route('/:id').put(protect, admin, updateAdvanceRequestStatus);
+// THIS IS THE CRUCIAL ROUTE THAT WAS MISSING ON YOUR DEPLOYED SERVER
+router.route('/:employeeId').get(protect, getMyPayments);
 
 export default router;
