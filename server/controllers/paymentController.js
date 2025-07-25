@@ -22,7 +22,7 @@ const createPayment = async (req, res) => {
 
   const pendingBata = (employee.bata || []).filter(b => b.status === 'pending');
   const totalBata = pendingBata.reduce((sum, b) => sum + b.amount, 0);
-  const finalPaid = (employee.salary - advanceDeduction) + totalBata;
+  const finalPaid = (employee.salary + advanceDeduction) + totalBata;
 
   const payment = await Payment.create({
     employee: employeeId,
