@@ -31,45 +31,28 @@ const UserDetailedHistoryPage = () => {
     }
   }, [userId, loggedInUser]);
 
-  const { groupedByMonth, monthlyTotals } = useMemo(() => {
-    if (!details) return { groupedByMonth: {}, monthlyTotals: {} };
-
-    const allTransactions = [
-      ...details.payments.map(p => ({ ...p, type: 'payment' })),
-      ...details.bata.map(b => ({ ...b, type: 'bata' })),
-      ...details.advances.map(a => ({ ...a, type: 'advance' }))
-    ];
-
-    const grouped = allTransactions.reduce((acc, item) => {
-      const date = new Date(item.createdAt || item.date);
-      const monthYear = `${date.toLocaleString('default', { month: 'long' })} ${date.getFullYear()}`;
-      if (!acc[monthYear]) acc[monthYear] = [];
-      acc[monthYear].push(item);
+  const monthlyPayments = useMemo(() => {
+    if (!details) return {};
+    // Group payments by month, as each payment is a summary of that month's transactions
+    return details.payments.reduce((acc, payment) => {
+      const monthYear = `${payment.month} ${payment.year}`;
+      acc[monthYear] = payment;
       return acc;
     }, {});
-
-    const totals = {};
-    for (const month in grouped) {
-        const salary = grouped[month].filter(t => t.type === 'payment').reduce((sum, t) => sum + t.finalPaid, 0);
-        const bata = grouped[month].filter(t => t.type === 'bata').reduce((sum, t) => sum + t.amount, 0);
-        totals[month] = { salary, bata, total: salary + bata };
-    }
-
-    return { groupedByMonth: grouped, monthlyTotals: totals };
   }, [details]);
 
   const toggleMonth = (monthYear) => {
     setActiveMonth(activeMonth === monthYear ? null : monthYear);
   };
 
-  if (loading) return <div>Loading details...</div>;
+  if (loading) return <div className="text-center p-10">Loading details...</div>;
   if (error) return <div className="text-red-500 text-center p-4">{error}</div>;
-  if (!details) return <div>User not found.</div>;
+  if (!details) return <div className="text-center p-10">User not found.</div>;
 
   return (
     <div>
       <Link to="/admin/history" className="text-emerald-600 hover:underline mb-4 inline-block">&larr; Back to User List</Link>
-      <div className="flex items-center space-x-4 mb-6">
+      <div className="flex items-center space-x-4 mb-8">
         <img className="h-16 w-16 rounded-full object-cover" src={details.user.photo || `https://placehold.co/100x100/E2E8F0/4A5568?text=${details.user.username.charAt(0)}`} alt="" />
         <div>
             <h1 className="text-3xl font-bold text-gray-800">{details.user.username}</h1>
@@ -78,8 +61,8 @@ const UserDetailedHistoryPage = () => {
       </div>
       
       <div className="space-y-4">
-        {Object.keys(groupedByMonth).map(monthYear => {
-          const totalForMonth = monthlyTotals[monthYear]?.total || 0;
+        {Object.keys(monthlyPayments).map(monthYear => {
+          const payment = monthlyPayments[monthYear];
           const isActive = activeMonth === monthYear;
 
           return (
@@ -91,7 +74,7 @@ const UserDetailedHistoryPage = () => {
                 <span>{monthYear}</span>
                 <div className="flex items-center space-x-4">
                     <span className="text-base font-bold text-emerald-600">
-                        Total Paid: ₹{new Intl.NumberFormat('en-IN').format(totalForMonth)}
+                        Total Paid: ₹{new Intl.NumberFormat('en-IN').format(payment.finalPaid)}
                     </span>
                     <svg
                       className={`w-5 h-5 transform transition-transform duration-300 ${
@@ -104,23 +87,24 @@ const UserDetailedHistoryPage = () => {
                 </div>
               </button>
               {isActive && (
-                <div className="border-t border-gray-200 p-4">
-                  <div className="space-y-3">
-                      {groupedByMonth[monthYear].sort((a,b) => new Date(b.createdAt || b.date) - new Date(a.createdAt || a.date)).map(item => (
-                          <div key={item._id || item.date} className="flex justify-between items-center text-sm p-3 rounded-md border">
-                              <div>
-                                  <span className={`font-semibold ${
-                                      item.type === 'payment' ? 'text-green-600' :
-                                      item.type === 'bata' ? 'text-blue-600' : 'text-red-600'
-                                  }`}>{item.type.charAt(0).toUpperCase() + item.type.slice(1)}</span>
-                                  <span className="text-gray-500 ml-2 text-xs">{new Date(item.createdAt || item.date).toLocaleDateString()}</span>
-                                  {item.description && <p className="text-xs text-gray-500 mt-1">{item.description}</p>}
-                              </div>
-                              <span className="font-bold">
-                                  ₹{new Intl.NumberFormat('en-IN').format(item.finalPaid || item.amount)}
-                              </span>
-                          </div>
-                      ))}
+                <div className="border-t border-gray-200 p-6">
+                  <div className="space-y-3 text-sm">
+                    <div className="flex justify-between">
+                        <span className="text-gray-600">Base Salary:</span>
+                        <span className="font-medium text-gray-800">₹{new Intl.NumberFormat('en-IN').format(payment.baseSalary)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                        <span className="text-gray-600">Bata Paid:</span>
+                        <span className="font-medium text-blue-600">+ ₹{new Intl.NumberFormat('en-IN').format(payment.bataPaid)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                        <span className="text-gray-600">Advance Deduction:</span>
+                        <span className="font-medium text-red-600">- ₹{new Intl.NumberFormat('en-IN').format(payment.advanceDeduction)}</span>
+                    </div>
+                    <div className="flex justify-between border-t pt-3 mt-3">
+                        <span className="font-bold text-gray-800">Total Paid:</span>
+                        <span className="font-bold text-emerald-600 text-lg">₹{new Intl.NumberFormat('en-IN').format(payment.finalPaid)}</span>
+                    </div>
                   </div>
                 </div>
               )}
