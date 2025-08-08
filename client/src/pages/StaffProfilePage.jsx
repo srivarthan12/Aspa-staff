@@ -137,7 +137,7 @@ const StaffProfilePage = () => {
                     <th className="px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Month</th>
                     <th className="px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Base Salary</th>
                     <th className="px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Bata Paid</th>
-                    <th className="px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Deduction</th>
+                    <th className="px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Advance</th>
                     <th className="px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Total Paid</th>
                   </tr>
                 </thead>
@@ -151,7 +151,7 @@ const StaffProfilePage = () => {
                         <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">₹{new Intl.NumberFormat('en-IN').format(p.baseSalary)}</td>
                         <td className="px-4 py-4 whitespace-nowrap text-sm text-blue-600">+ ₹{new Intl.NumberFormat('en-IN').format(p.bataPaid || 0)}</td>
                         <td className="px-4 py-4 whitespace-nowrap text-sm text-red-600">- ₹{new Intl.NumberFormat('en-IN').format(p.advanceDeduction)}</td>
-                        <td className="px-4 py-4 whitespace-nowrap text-sm font-bold text-emerald-600">₹{new Intl.NumberFormat('en-IN').format(p.finalPaid)}</td>
+                        <td className="px-4 py-4 whitespace-nowrap text-sm font-bold text-emerald-600">₹{new Intl.NumberFormat('en-IN').format(p.baseSalary+p.bataPaid)}</td>
                       </tr>
                     ))
                   )}
