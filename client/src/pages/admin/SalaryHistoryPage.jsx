@@ -97,8 +97,8 @@ const SalaryHistoryPage = () => {
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">₹{new Intl.NumberFormat('en-IN').format(p.baseSalary)}</td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-blue-600">+ ₹{new Intl.NumberFormat('en-IN').format(p.bataPaid || 0)}</td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-red-600">+ ₹{new Intl.NumberFormat('en-IN').format(p.advanceDeduction)}</td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-emerald-600">₹{new Intl.NumberFormat('en-IN').format(p.finalPaid)}</td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-red-600">₹{new Intl.NumberFormat('en-IN').format(p.advanceDeduction)}</td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-emerald-600">₹{new Intl.NumberFormat('en-IN').format(p.baseSalary+p.bataPaid)}</td>
                           </tr>
                         ))}
                       </tbody>
