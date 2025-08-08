@@ -98,12 +98,12 @@ const UserDetailedHistoryPage = () => {
                         <span className="font-medium text-blue-600">+ ₹{new Intl.NumberFormat('en-IN').format(payment.bataPaid)}</span>
                     </div>
                     <div className="flex justify-between">
-                        <span className="text-gray-600">Advance Deduction:</span>
-                        <span className="font-medium text-red-600">- ₹{new Intl.NumberFormat('en-IN').format(payment.advanceDeduction)}</span>
+                        <span className="text-gray-600">Advance:</span>
+                        <span className="font-medium text-red-600">₹{new Intl.NumberFormat('en-IN').format(payment.advanceDeduction)}</span>
                     </div>
                     <div className="flex justify-between border-t pt-3 mt-3">
                         <span className="font-bold text-gray-800">Total Paid:</span>
-                        <span className="font-bold text-emerald-600 text-lg">₹{new Intl.NumberFormat('en-IN').format(payment.finalPaid)}</span>
+                        <span className="font-bold text-emerald-600 text-lg">₹{new Intl.NumberFormat('en-IN').format(payment.baseSalary+bataPaid)}</span>
                     </div>
                   </div>
                 </div>
