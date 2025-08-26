@@ -103,7 +103,7 @@ const UserDetailedHistoryPage = () => {
                     </div>
                     <div className="flex justify-between border-t pt-3 mt-3">
                         <span className="font-bold text-gray-800">Total Paid:</span>
-                        <span className="font-bold text-emerald-600 text-lg">₹{new Intl.NumberFormat('en-IN').format(payment.baseSalary+bataPaid)}</span>
+                        <span className="font-bold text-emerald-600 text-lg">₹{new Intl.NumberFormat('en-IN').format(payment.baseSalary+payment.bataPaid)}</span>
                     </div>
                   </div>
                 </div>
