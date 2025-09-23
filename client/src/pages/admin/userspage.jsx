@@ -6,6 +6,7 @@ import Modal from '../../components/Modal';
 import Input from '../../components/Input';
 import Button from '../../components/Button';
 import SkeletonRow from '../../components/SkeletonRow';
+import DropdownMenu, { DropdownItem } from '../../components/DropdownMenu';
 
 const UsersPage = () => {
   const [users, setUsers] = useState([]);
@@ -13,22 +14,20 @@ const UsersPage = () => {
   const [error, setError] = useState('');
   const { user: loggedInUser } = useAuth();
   
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  // State for modals
+  const [modalType, setModalType] = useState(null); // 'addUser', 'addBata', 'raiseSalary'
+  const [selectedUser, setSelectedUser] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState('');
 
-  const [formData, setFormData] = useState({
-    username: '',
-    password: '',
-    role: 'staff',
-    staffRole: '',
-    salary: '',
-    photo: null,
-  });
+  // Form state
+  const [addUserFormData, setAddUserFormData] = useState({ fullname: '', username: '', password: '', role: 'staff', staffRole: '', salary: '', photo: null });
+  const [bataAmount, setBataAmount] = useState('');
+  const [bataDescription, setBataDescription] = useState('');
+  const [newSalary, setNewSalary] = useState('');
 
   const fetchUsers = async () => {
     try {
-      // Keep loading true on manual refresh
       setLoading(true);
       const data = await userService.getUsers(loggedInUser.token);
       setUsers(data);
@@ -56,32 +55,35 @@ const UsersPage = () => {
     }
   };
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
+  // --- Modal Openers ---
+  const openModal = (type, user = null) => {
+    setModalType(type);
+    setSelectedUser(user);
+    setFormError('');
+
+    if (type === 'addUser') setAddUserFormData({ fullname: '', username: '', password: '', role: 'staff', staffRole: '', salary: '', photo: null });
+    if (type === 'addBata') { setBataAmount(''); setBataDescription(''); }
+    if (type === 'raiseSalary') setNewSalary(user?.salary || '');
   };
 
-  const handleFileChange = (e) => {
-    setFormData({ ...formData, photo: e.target.files[0] });
+  const closeModal = () => {
+    setModalType(null);
+    setSelectedUser(null);
   };
 
+  // --- Form Handlers ---
   const handleAddUser = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
     setFormError('');
-
     const data = new FormData();
-    // Use a loop to append all form data
-    for (const key in formData) {
-      if (formData[key]) {
-        data.append(key, formData[key]);
-      }
+    for (const key in addUserFormData) {
+      if (addUserFormData[key]) data.append(key, addUserFormData[key]);
     }
-
     try {
         await userService.registerUser(data, loggedInUser.token);
-        setIsModalOpen(false);
-        fetchUsers(); // Refresh the user list
+        closeModal();
+        fetchUsers();
     } catch (err) {
         setFormError(err.response?.data?.message || 'Failed to create user.');
     } finally {
@@ -89,17 +91,33 @@ const UsersPage = () => {
     }
   };
 
-  const openModal = () => {
-    setFormData({
-        username: '',
-        password: '',
-        role: 'staff',
-        staffRole: '',
-        salary: '',
-        photo: null,
-    });
+  const handleAddBata = async (e) => {
+    e.preventDefault();
+    setIsSubmitting(true);
     setFormError('');
-    setIsModalOpen(true);
+    try {
+        await userService.addUserBata(selectedUser._id, { amount: bataAmount, description: bataDescription }, loggedInUser.token);
+        closeModal();
+    } catch (err) {
+        setFormError(err.response?.data?.message || 'Failed to add bata.');
+    } finally {
+        setIsSubmitting(false);
+    }
+  };
+
+  const handleRaiseSalary = async (e) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    setFormError('');
+    try {
+        await userService.raiseUserSalary(selectedUser._id, { newSalary }, loggedInUser.token);
+        closeModal();
+        fetchUsers();
+    } catch (err) {
+        setFormError(err.response?.data?.message || 'Failed to update salary.');
+    } finally {
+        setIsSubmitting(false);
+    }
   };
 
   if (error) return <div className="text-red-500">{error}</div>;
@@ -108,7 +126,7 @@ const UsersPage = () => {
     <div>
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold text-gray-800">User Management</h1>
-        <button onClick={openModal} className="px-4 py-2 font-semibold text-white bg-emerald-600 rounded-md hover:bg-emerald-700">
+        <button onClick={() => openModal('addUser')} className="px-4 py-2 font-semibold text-white bg-emerald-600 rounded-md hover:bg-emerald-700">
           Add User
         </button>
       </div>
@@ -118,8 +136,8 @@ const UsersPage = () => {
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Salary</th>
                 <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
-                <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Username</th>
                 <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider text-right">Actions</th>
               </tr>
             </thead>
@@ -135,22 +153,31 @@ const UsersPage = () => {
                           <img className="h-10 w-10 rounded-full object-cover" src={user.photo || `https://placehold.co/100x100/E2E8F0/4A5568?text=${user.username.charAt(0)}`} alt="" />
                         </div>
                         <div className="ml-4">
+                          <div className="text-sm font-medium text-gray-900">{user.fullname}</div>
+                          <div className="text-xs text-gray-500">{user.username}</div>
                         </div>
                       </div>
                     </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                        {user.role === 'staff' ? `₹${new Intl.NumberFormat('en-IN').format(user.salary || 0)}` : 'N/A'}
+                    </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                          user.role === 'superadmin' ? 'bg-red-100 text-red-800' :
-                          user.role === 'admin' ? 'bg-orange-100 text-orange-800' : 'bg-green-100 text-green-800'
-                      }`}>
+                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${ user.role === 'superadmin' ? 'bg-red-100 text-red-800' : user.role === 'admin' ? 'bg-orange-100 text-orange-800' : 'bg-green-100 text-green-800' }`}>
                           {user.role}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.username}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      {loggedInUser.role === 'superadmin' && user.role !== 'superadmin' && (
-                          <button onClick={() => handleDelete(user._id)} className="text-red-600 hover:text-red-900">Delete</button>
-                      )}
+                      <DropdownMenu>
+                        {user.role === 'staff' && (
+                            <>
+                                <DropdownItem onClick={() => openModal('addBata', user)}>Add Bata</DropdownItem>
+                                <DropdownItem onClick={() => openModal('raiseSalary', user)}>Raise Salary</DropdownItem>
+                            </>
+                        )}
+                        {loggedInUser.role === 'superadmin' && user.role !== 'superadmin' && (
+                          <DropdownItem onClick={() => handleDelete(user._id)}>Delete User</DropdownItem>
+                        )}
+                      </DropdownMenu>
                     </td>
                   </tr>
                 ))
@@ -160,34 +187,48 @@ const UsersPage = () => {
         </div>
       </div>
       
-      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Add New User">
+      {/* Modals */}
+      <Modal isOpen={modalType === 'addUser'} onClose={closeModal} title="Add New User">
         <form onSubmit={handleAddUser} className="space-y-4">
             {formError && <p className="text-red-500 text-sm bg-red-50 p-2 rounded">{formError}</p>}
-            <Input name="username" label="Username" value={formData.username} onChange={handleInputChange} required />
-            <Input name="password" label="Password" type="password" value={formData.password} onChange={handleInputChange} required />
+            <Input name="fullname" label="Full Name" value={addUserFormData.fullname} onChange={(e) => setAddUserFormData({...addUserFormData, fullname: e.target.value})} />
+            <Input name="username" label="Username" value={addUserFormData.username} onChange={(e) => setAddUserFormData({...addUserFormData, username: e.target.value})} />
+            <Input name="password" label="Password" type="password" value={addUserFormData.password} onChange={(e) => setAddUserFormData({...addUserFormData, password: e.target.value})} />
             <div>
-              <label htmlFor="role" className="block text-sm font-medium text-gray-700">Role</label>
-              <select name="role" value={formData.role} onChange={handleInputChange} className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm">
-                <option value="staff">Staff</option>
-                <option value="admin">Admin</option>
-                <option value="superadmin">Super admin</option>
-              </select>
+                <label htmlFor="role" className="block text-sm font-medium text-gray-700">Role</label>
+                <select name="role" value={addUserFormData.role} onChange={(e) => setAddUserFormData({...addUserFormData, role: e.target.value})} className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm">
+                    <option value="staff">Staff</option>
+                    <option value="admin">Admin</option>
+                </select>
             </div>
-            {formData.role === 'staff' && (
+            {addUserFormData.role === 'staff' && (
                 <>
-                    <Input name="staffRole" label="Staff Role (e.g., Cashier)" value={formData.staffRole} onChange={handleInputChange} required/>
-                    <Input name="salary" label="Monthly Salary" type="number" value={formData.salary} onChange={handleInputChange} required/>
+                    <Input name="staffRole" label="Staff Role (e.g., Cashier)" value={addUserFormData.staffRole} onChange={(e) => setAddUserFormData({...addUserFormData, staffRole: e.target.value})} />
+                    <Input name="salary" label="Monthly Salary" type="number" value={addUserFormData.salary} onChange={(e) => setAddUserFormData({...addUserFormData, salary: e.target.value})} />
                 </>
             )}
             <div>
                 <label htmlFor="photo" className="block text-sm font-medium text-gray-700">Photo</label>
-                <input type="file" name="photo" onChange={handleFileChange} className="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100"/>
+                <input type="file" name="photo" onChange={(e) => setAddUserFormData({...addUserFormData, photo: e.target.files[0]})} className="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100"/>
             </div>
-            <div className="pt-4">
-                <Button type="submit" disabled={isSubmitting}>
-                    {isSubmitting ? 'Creating...' : 'Create User'}
-                </Button>
-            </div>
+            <div className="pt-4"><Button type="submit" disabled={isSubmitting}>{isSubmitting ? 'Creating...' : 'Create User'}</Button></div>
+        </form>
+      </Modal>
+
+      <Modal isOpen={modalType === 'addBata'} onClose={closeModal} title={`Add Bata for ${selectedUser?.username}`}>
+        <form onSubmit={handleAddBata} className="space-y-4">
+            {formError && <p className="text-red-500 text-sm">{formError}</p>}
+            <Input name="amount" label="Bata Amount (₹)" type="number" value={bataAmount} onChange={(e) => setBataAmount(e.target.value)} />
+            <Input name="description" label="Description (Optional)" value={bataDescription} onChange={(e) => setBataDescription(e.target.value)} required={false} />
+            <div className="pt-4"><Button type="submit" disabled={isSubmitting}>{isSubmitting ? 'Adding...' : 'Add Bata'}</Button></div>
+        </form>
+      </Modal>
+
+      <Modal isOpen={modalType === 'raiseSalary'} onClose={closeModal} title={`Raise Salary for ${selectedUser?.username}`}>
+        <form onSubmit={handleRaiseSalary} className="space-y-4">
+            {formError && <p className="text-red-500 text-sm">{formError}</p>}
+            <Input name="newSalary" label="New Monthly Salary (₹)" type="number" value={newSalary} onChange={(e) => setNewSalary(e.target.value)} />
+            <div className="pt-4"><Button type="submit" disabled={isSubmitting}>{isSubmitting ? 'Updating...' : 'Update Salary'}</Button></div>
         </form>
       </Modal>
     </div>

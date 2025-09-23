@@ -1,43 +1,30 @@
+// server/models/userModel.js
 import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
 
+// Define a schema for individual bata payments
+const bataSchema = mongoose.Schema({
+    amount: { type: Number, required: true },
+    date: { type: Date, default: Date.now },
+    description: { type: String, required: false },
+    // THIS STATUS FIELD IS CRUCIAL FOR THE LOGIC TO WORK
+    status: { type: String, enum: ['pending', 'paid'], default: 'pending' }
+});
+
 const userSchema = mongoose.Schema(
   {
-    username: {
-      type: String,
-      required: true,
-      unique: true,
-    },
-    password: {
-      type: String,
-      required: true,
-    },
-    role: {
-      type: String,
-      required: true,
-      enum: ['staff', 'admin', 'superadmin'],
-      default: 'staff',
-    },
-    photo: {
-      type: String,
-      required: false,
-    },
-    // --- Staff-specific fields ---
-    staffRole: {
-      type: String,
-      required: function () { return this.role === 'staff'; },
-    },
-    salary: {
-      type: Number,
-      required: function () { return this.role === 'staff'; },
-    },
-    // We will add payment history and advance requests later
+    username: { type: String, required: true, unique: true },
+    password: { type: String, required: true },
+    role: { type: String, required: true, enum: ['staff', 'admin', 'superadmin'], default: 'staff' },
+    photo: { type: String, required: false },
+    staffRole: { type: String, required: function () { return this.role === 'staff'; } },
+    salary: { type: Number, required: function () { return this.role === 'staff'; } },
+    bata: [bataSchema]
   },
   {
-    timestamps: true, 
+    timestamps: true,
   }
-)
-
+);
 
 userSchema.pre('save', async function (next) {
   if (!this.isModified('password')) {
@@ -50,7 +37,6 @@ userSchema.pre('save', async function (next) {
 userSchema.methods.matchPassword = async function (enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password);
 };
-
 
 const User = mongoose.model('User', userSchema);
 

@@ -5,7 +5,10 @@ import {
   authUser,
   registerUser,
   getUsers,
-  deleteUser
+  deleteUser,
+  addUserBata,
+  raiseUserSalary,
+  getUserFinancialDetails
 } from '../controllers/userController.js';
 import { protect, admin, superadmin } from '../middleware/authMiddleware.js';
 import upload from '../middleware/uploadMiddleware.js'; // Import multer middleware
@@ -18,5 +21,8 @@ router.route('/register').post(protect, admin, upload.single('photo'), registerU
 router.post('/login', authUser);
 
 router.route('/:id').delete(protect, superadmin, deleteUser);
+router.route('/:id/bata').post(protect, admin, addUserBata);
+router.route('/:id/salary').put(protect, admin, raiseUserSalary);
+router.route('/:id/financials').get(protect, admin, getUserFinancialDetails);
 
 export default router;

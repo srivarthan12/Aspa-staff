@@ -21,6 +21,7 @@ const StaffProfilePage = () => {
 
   useEffect(() => {
     const fetchData = async () => {
+      if (!user) return;
       try {
         setLoading(true);
         const paymentData = await paymentService.getMyPayments(user._id, user.token);
@@ -32,9 +33,7 @@ const StaffProfilePage = () => {
       }
     };
 
-    if (user) {
-      fetchData();
-    }
+    fetchData();
   }, [user]);
 
   const handleLogout = () => {
@@ -59,9 +58,10 @@ const StaffProfilePage = () => {
 
   if (!user) return null;
 
+  const sortedBata = user.bata ? [...user.bata].sort((a, b) => new Date(b.date) - new Date(a.date)) : [];
+
   return (
     <div className="min-h-screen bg-gray-100">
-      {/* Header */}
       <header className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8 flex justify-between items-center">
           <div className="flex items-center space-x-4">
@@ -79,7 +79,6 @@ const StaffProfilePage = () => {
 
       <main className="py-10">
         <div className="max-w-7xl mx-auto sm:px-6 lg:px-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Left Column: Profile & Advance Request */}
           <div className="lg:col-span-1 space-y-8">
             <div className="bg-white p-6 rounded-lg shadow-md">
               <h3 className="text-xl font-semibold mb-4 text-gray-800">My Profile</h3>
@@ -90,25 +89,45 @@ const StaffProfilePage = () => {
             </div>
 
             <div className="bg-white p-6 rounded-lg shadow-md">
-              <h3 className="text-xl font-semibold mb-4 text-gray-800">Request Advance</h3>
-              <form onSubmit={handleAdvanceRequest} className="space-y-4">
-                {formMessage && <p className="text-sm text-center p-2 rounded-md bg-blue-50 text-blue-700">{formMessage}</p>}
-                <Input 
-                    name="advanceAmount"
-                    label="Amount (₹)"
-                    type="number"
-                    value={advanceAmount}
-                    onChange={(e) => setAdvanceAmount(e.target.value)}
-                    placeholder="e.g., 5000"
-                />
-                <Button type="submit" disabled={isSubmitting}>
-                    {isSubmitting ? 'Submitting...' : 'Submit Request'}
-                </Button>
-              </form>
+                <h3 className="text-xl font-semibold mb-4 text-gray-800">Request Advance</h3>
+                <form onSubmit={handleAdvanceRequest} className="space-y-4">
+                  {formMessage && <p className="text-sm text-center p-2 rounded-md bg-blue-50 text-blue-700">{formMessage}</p>}
+                  <Input 
+                      name="advanceAmount"
+                      label="Amount (₹)"
+                      type="number"
+                      value={advanceAmount}
+                      onChange={(e) => setAdvanceAmount(e.target.value)}
+                      placeholder="e.g., 5000"
+                  />
+                  <Button type="submit" disabled={isSubmitting}>
+                      {isSubmitting ? 'Submitting...' : 'Submit Request'}
+                  </Button>
+                </form>
+            </div>
+
+            <div className="bg-white p-6 rounded-lg shadow-md">
+              <h3 className="text-xl font-semibold mb-4 text-gray-800">My Bata History</h3>
+              <div className="space-y-3 max-h-60 overflow-y-auto">
+                {sortedBata.length > 0 ? (
+                    sortedBata.map((b, index) => (
+                        <div key={index} className="p-3 bg-gray-50 rounded-md">
+                            <div className="flex justify-between items-start">
+                                <div>
+                                    <p className="font-bold text-emerald-600">₹{new Intl.NumberFormat('en-IN').format(b.amount)}</p>
+                                    <p className="text-xs text-gray-500">{new Date(b.date).toLocaleDateString()}</p>
+                                </div>
+                            </div>
+                            {b.description && <p className="text-xs text-gray-600 mt-1">{b.description}</p>}
+                        </div>
+                    ))
+                ) : (
+                    <p className="text-sm text-gray-500 text-center py-4">No bata has been awarded yet.</p>
+                )}
+              </div>
             </div>
           </div>
 
-          {/* Right Column: Payment History */}
           <div className="lg:col-span-2 bg-white p-6 rounded-lg shadow-md">
             <h3 className="text-xl font-semibold mb-4 text-gray-800">Payment History</h3>
             <div className="overflow-x-auto">
@@ -117,18 +136,20 @@ const StaffProfilePage = () => {
                   <tr>
                     <th className="px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Month</th>
                     <th className="px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Base Salary</th>
+                    <th className="px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Bata Paid</th>
                     <th className="px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Deduction</th>
-                    <th className="px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Amount Paid</th>
+                    <th className="px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Total Paid</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {loading ? (
-                    <tr><td colSpan="4" className="text-center p-4">Loading history...</td></tr>
+                    <tr><td colSpan="5" className="text-center p-4">Loading history...</td></tr>
                   ) : (
                     payments.map((p) => (
                       <tr key={p._id}>
                         <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{p.month} {p.year}</td>
                         <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">₹{new Intl.NumberFormat('en-IN').format(p.baseSalary)}</td>
+                        <td className="px-4 py-4 whitespace-nowrap text-sm text-blue-600">+ ₹{new Intl.NumberFormat('en-IN').format(p.bataPaid || 0)}</td>
                         <td className="px-4 py-4 whitespace-nowrap text-sm text-red-600">- ₹{new Intl.NumberFormat('en-IN').format(p.advanceDeduction)}</td>
                         <td className="px-4 py-4 whitespace-nowrap text-sm font-bold text-emerald-600">₹{new Intl.NumberFormat('en-IN').format(p.finalPaid)}</td>
                       </tr>

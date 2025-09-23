@@ -17,6 +17,10 @@ connectDB();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+app.use(cors({
+  origin: 'http://localhost:5173',
+  credentials: true // if you are sending cookies or auth headers
+}));
 // CORS Configuration
 const corsOptions = {
   origin: process.env.NODE_ENV === 'production' 
@@ -24,7 +28,7 @@ const corsOptions = {
     : 'http://localhost:5173', // Your local frontend URL
   optionsSuccessStatus: 200
 };
-app.use(cors(corsOptions));
+
 
 app.use(express.json());
 

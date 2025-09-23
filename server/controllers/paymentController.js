@@ -8,18 +8,15 @@ import AdvanceRequest from '../models/advanceRequestModel.js';
 // @access  Private/Admin
 const createPayment = async (req, res) => {
   const { employeeId, month, year } = req.body;
-
   const employee = await User.findById(employeeId);
+
   if (!employee) {
     res.status(404);
     throw new Error('Employee not found');
   }
 
-  const advance = await AdvanceRequest.findOne({
-      employee: employeeId,
-      status: 'approved',
-  });
-
+  // --- Advance Deduction Logic ---
+  const advance = await AdvanceRequest.findOne({ employee: employeeId, status: 'approved' });
   let advanceDeduction = 0;
   if (advance) {
     advanceDeduction = advance.amount;
@@ -27,7 +24,12 @@ const createPayment = async (req, res) => {
     await advance.save();
   }
 
-  const finalPaid = employee.salary - advanceDeduction;
+  // --- Bata Calculation Logic (Corrected) ---
+  const pendingBata = employee.bata.filter(b => b.status === 'pending');
+  const totalBata = pendingBata.reduce((sum, b) => sum + b.amount, 0);
+
+  // --- Final Paid Calculation (Corrected) ---
+  const finalPaid = (employee.salary - advanceDeduction) + totalBata;
 
   const payment = await Payment.create({
     employee: employeeId,
@@ -35,8 +37,17 @@ const createPayment = async (req, res) => {
     year,
     baseSalary: employee.salary,
     advanceDeduction,
+    bataPaid: totalBata, // Store the total bata
     finalPaid,
   });
+
+  // Mark the processed bata as 'paid'
+  employee.bata.forEach(b => {
+      if (b.status === 'pending') {
+          b.status = 'paid';
+      }
+  });
+  await employee.save();
 
   res.status(201).json(payment);
 };
@@ -49,7 +60,6 @@ const getMyPayments = async (req, res) => {
         res.status(401);
         throw new Error('Not authorized to view this payment history');
     }
-    
     const payments = await Payment.find({ employee: req.params.employeeId }).sort({ createdAt: -1 });
     res.json(payments);
 };

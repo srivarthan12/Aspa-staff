@@ -13,7 +13,9 @@ import DashboardPage from './pages/admin/DashboardPage';
 import UsersPage from './pages/admin/UsersPage';
 import AdvanceRequestsPage from './pages/admin/AdvanceRequestsPage';
 import PayrollPage from './pages/admin/PayrollPage';
-import StaffProfilePage from './pages/StaffProfilePage'; // Import the new page
+import StaffProfilePage from './pages/StaffProfilePage';
+import UserSalarySelectPage from './pages/admin/UserSalarySelectionPage';
+import UserDetailedHistoryPage from './pages/admin/UserDetailedHistoryPage';
 import SalaryHistoryPage from './pages/admin/SalaryHistoryPage';
 
 function App() {
@@ -31,7 +33,11 @@ function App() {
               <Route path="users" element={<UsersPage />} />
               <Route path="requests" element={<AdvanceRequestsPage />} />
               <Route path="payroll" element={<PayrollPage />} />
-              <Route path="history" element={<SalaryHistoryPage />} /> 
+               <Route path="montly" element={<SalaryHistoryPage/>} />
+              
+              <Route path="history" element={<UserSalarySelectPage />} />
+              {/* THIS IS THE FIX: The path now includes ':userId' to capture the ID from the URL */}
+              <Route path="history/:userId" element={<UserDetailedHistoryPage />} />
             </Route>
           </Route>
 
